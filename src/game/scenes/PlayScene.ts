@@ -4,7 +4,13 @@ import { gameConfig } from '../data/gameConfig';
 import { ChartPlaybackSystem } from '../systems/ChartPlaybackSystem';
 import { JudgmentSystem } from '../systems/JudgmentSystem';
 import { ScoreSystem } from '../systems/ScoreSystem';
-import type { ActiveChartNote, InputAction, JudgmentResult, NoteType } from '../types/GameTypes';
+import type {
+  ActiveChartNote,
+  InputAction,
+  JudgmentResult,
+  NoteType,
+  ScoreSnapshot,
+} from '../types/GameTypes';
 import { GameplayHud } from '../ui/GameplayHud';
 
 interface NoteView {
@@ -209,9 +215,12 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private applyJudgmentResult(result: JudgmentResult): void {
-    this.scoreSystem.applyJudgment(result);
+    const previousSnapshot = this.scoreSystem.getSnapshot();
+    const snapshot = this.scoreSystem.applyJudgment(result);
+
     this.showJudgmentText(result);
-    this.hud.update(this.scoreSystem.getSnapshot());
+    this.playHitFeel(result, previousSnapshot, snapshot);
+    this.hud.update(snapshot);
   }
 
   private showJudgmentText(result: JudgmentResult): void {
@@ -257,6 +266,137 @@ export class PlayScene extends Phaser.Scene {
     view.body.destroy();
     view.label.destroy();
     this.noteViews.delete(noteId);
+  }
+
+  private playHitFeel(
+    result: JudgmentResult,
+    previousSnapshot: ScoreSnapshot,
+    snapshot: ScoreSnapshot,
+  ): void {
+    if (result.note && result.judgment !== 'Miss') {
+      this.playScreenShake(result.note.type);
+
+      if (result.judgment === 'Perfect') {
+        this.showPerfectBurst(result.note.type);
+      }
+    }
+
+    if (this.isNewComboMilestone(previousSnapshot.combo, snapshot.combo)) {
+      this.showComboMilestone(snapshot.combo);
+    }
+
+    if (!previousSnapshot.feverActive && snapshot.feverActive) {
+      this.showFeverActivation();
+    }
+  }
+
+  private playScreenShake(noteType: NoteType): void {
+    if (noteType === 'heavy') {
+      this.cameras.main.shake(
+        gameConfig.gameFeel.shake.heavyDurationMs,
+        gameConfig.gameFeel.shake.heavyIntensity,
+      );
+      return;
+    }
+
+    if (noteType === 'finisher') {
+      this.cameras.main.shake(
+        gameConfig.gameFeel.shake.finisherDurationMs,
+        gameConfig.gameFeel.shake.finisherIntensity,
+      );
+    }
+  }
+
+  private showPerfectBurst(noteType: NoteType): void {
+    const y = this.getLaneY(noteType);
+
+    for (let index = 0; index < gameConfig.gameFeel.perfectBurst.particleCount; index += 1) {
+      const angle = (Math.PI * 2 * index) / gameConfig.gameFeel.perfectBurst.particleCount;
+      const particle = this.add.circle(
+        gameConfig.playfield.judgeLineX,
+        y,
+        noteType === 'finisher' ? 7 : 5,
+        0xfacc15,
+        0.95,
+      );
+
+      this.tweens.add({
+        targets: particle,
+        x:
+          gameConfig.playfield.judgeLineX +
+          Math.cos(angle) * gameConfig.gameFeel.perfectBurst.distance,
+        y: y + Math.sin(angle) * gameConfig.gameFeel.perfectBurst.distance,
+        alpha: 0,
+        scale: 0.2,
+        duration: gameConfig.gameFeel.perfectBurst.durationMs,
+        ease: 'Quad.Out',
+        onComplete: () => particle.destroy(),
+      });
+    }
+  }
+
+  private isNewComboMilestone(previousCombo: number, currentCombo: number): boolean {
+    return (
+      currentCombo > 0 &&
+      currentCombo % gameConfig.gameFeel.comboMilestone.interval === 0 &&
+      currentCombo !== previousCombo
+    );
+  }
+
+  private showComboMilestone(combo: number): void {
+    const text = this.add
+      .text(640, 548, `${combo} COMBO`, {
+        fontSize: '42px',
+        color: '#facc15',
+        fontStyle: '900',
+      })
+      .setOrigin(0.5)
+      .setScale(0.82);
+
+    this.tweens.add({
+      targets: text,
+      y: 512,
+      alpha: 0,
+      scale: 1.18,
+      duration: gameConfig.gameFeel.comboMilestone.durationMs,
+      ease: 'Back.Out',
+      onComplete: () => text.destroy(),
+    });
+  }
+
+  private showFeverActivation(): void {
+    const flash = this.add
+      .rectangle(640, 360, 1280, 720, 0xf97316, 0.28)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    const text = this.add
+      .text(640, 214, 'FEVER ON', {
+        fontSize: '54px',
+        color: '#f97316',
+        fontStyle: '900',
+      })
+      .setOrigin(0.5)
+      .setScale(0.78);
+
+    this.cameras.main.shake(
+      gameConfig.gameFeel.shake.finisherDurationMs,
+      gameConfig.gameFeel.shake.finisherIntensity,
+    );
+
+    this.tweens.add({
+      targets: flash,
+      alpha: 0,
+      duration: gameConfig.gameFeel.feverActivation.flashDurationMs,
+      ease: 'Quad.Out',
+      onComplete: () => flash.destroy(),
+    });
+    this.tweens.add({
+      targets: text,
+      scale: 1.08,
+      alpha: 0,
+      duration: gameConfig.gameFeel.feverActivation.textDurationMs,
+      ease: 'Back.Out',
+      onComplete: () => text.destroy(),
+    });
   }
 
   private updateFeverIntensity(): void {

@@ -60,6 +60,27 @@ export const gameConfig = {
   persistence: {
     bestScoreKey: 'beat-breaker-best-score',
   },
+  gameFeel: {
+    shake: {
+      heavyDurationMs: 90,
+      heavyIntensity: 0.006,
+      finisherDurationMs: 150,
+      finisherIntensity: 0.012,
+    },
+    perfectBurst: {
+      particleCount: 8,
+      distance: 56,
+      durationMs: 320,
+    },
+    comboMilestone: {
+      interval: 10,
+      durationMs: 560,
+    },
+    feverActivation: {
+      flashDurationMs: 420,
+      textDurationMs: 760,
+    },
+  },
   playfield: {
     spawnX: 1140,
     judgeLineX: 260,
