@@ -1,17 +1,16 @@
 import Phaser from 'phaser';
-import { beatBreakerChart } from '../data/beatBreakerChart';
 import { gameConfig } from '../data/gameConfig';
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
-    super('TitleScene');
+    super(gameConfig.sceneKeys.title);
   }
 
   create(): void {
     this.cameras.main.setBackgroundColor(gameConfig.colors.background);
 
     this.add.rectangle(640, 360, 1280, 720, 0x08090d);
-    this.add.rectangle(640, 360, 1280, 720, 0x111827, 0.32);
+    this.add.rectangle(640, 360, 1280, 720, gameConfig.colors.panel, 0.3);
 
     this.add
       .text(640, 150, 'BEAT BREAKER', {
@@ -22,45 +21,45 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(640, 230, 'J Light  |  K Heavy  |  Space Finisher', {
+      .text(640, 232, 'Rhythm action MVP structure', {
         fontSize: '28px',
         color: '#d1d5db',
       })
       .setOrigin(0.5);
 
     this.add
-      .text(640, 292, `${beatBreakerChart.title} - ${beatBreakerChart.bpm} BPM - 49 seconds`, {
-        fontSize: '22px',
-        color: '#9ca3af',
-      })
+      .text(
+        640,
+        306,
+        [
+          gameConfig.controls.lightAttack.label,
+          gameConfig.controls.heavyAttack.label,
+          gameConfig.controls.finisher.label,
+        ].join('     '),
+        {
+          fontSize: '24px',
+          color: '#f5f7fb',
+        },
+      )
       .setOrigin(0.5);
 
-    const startText = this.add
-      .text(640, 456, 'Press Space to Start', {
+    this.add
+      .text(640, 370, 'Press Space to start', {
         fontSize: '34px',
-        color: '#facc15',
+        color: gameConfig.colors.accent,
         fontStyle: '800',
       })
       .setOrigin(0.5);
 
-    this.tweens.add({
-      targets: startText,
-      alpha: 0.35,
-      duration: 620,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.InOut',
-    });
-
     this.add
-      .text(640, 540, 'Hit notes as they cross the white strike line. Misses break combo. Fever boosts score.', {
+      .text(640, 542, 'Placeholder title UI. Gameplay systems will be added later.', {
         fontSize: '20px',
-        color: '#d1d5db',
+        color: '#9ca3af',
       })
       .setOrigin(0.5);
 
     this.input.keyboard?.once('keydown-SPACE', () => {
-      this.scene.start('PlayScene');
+      this.scene.start(gameConfig.sceneKeys.play);
     });
   }
 }
