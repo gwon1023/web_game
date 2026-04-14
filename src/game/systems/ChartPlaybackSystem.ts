@@ -1,8 +1,14 @@
 import Phaser from 'phaser';
 import { gameConfig } from '../data/gameConfig';
-import type { ActiveChartNote, ChartNote, NoteLifecycleState, SongChart } from '../types/GameTypes';
+import type {
+  ActiveChartNote,
+  ChartNote,
+  JudgmentResult,
+  NoteLifecycleState,
+  SongChart,
+} from '../types/GameTypes';
 
-interface NotePlaybackState {
+export interface NotePlaybackState {
   readonly note: ChartNote;
   state: NoteLifecycleState;
 }
@@ -31,12 +37,7 @@ export class ChartPlaybackSystem {
 
   update(songTimeMs: number): readonly ActiveChartNote[] {
     for (const item of this.notes) {
-      if (item.state === 'expired') {
-        continue;
-      }
-
-      if (songTimeMs >= item.note.timeMs + gameConfig.chart.expireAfterMs) {
-        item.state = 'expired';
+      if (item.state === 'judged' || item.state === 'missed') {
         continue;
       }
 
@@ -52,6 +53,38 @@ export class ChartPlaybackSystem {
         state: item.state,
         progress: this.getApproachProgress(item.note, songTimeMs),
       }));
+  }
+
+  getJudgeableNotes(): readonly NotePlaybackState[] {
+    return this.notes.filter((item) => item.state === 'active' || item.state === 'pending');
+  }
+
+  markJudged(noteId: string): void {
+    const item = this.notes.find((candidate) => candidate.note.id === noteId);
+    if (item) {
+      item.state = 'judged';
+    }
+  }
+
+  collectLateMisses(songTimeMs: number, missAfterMs: number): readonly JudgmentResult[] {
+    const lateMisses: JudgmentResult[] = [];
+
+    for (const item of this.notes) {
+      if (item.state === 'judged' || item.state === 'missed') {
+        continue;
+      }
+
+      if (songTimeMs > item.note.timeMs + missAfterMs) {
+        item.state = 'missed';
+        lateMisses.push({
+          judgment: 'Miss',
+          offsetMs: Math.round(songTimeMs - item.note.timeMs),
+          note: item.note,
+        });
+      }
+    }
+
+    return lateMisses;
   }
 
   isComplete(songTimeMs: number): boolean {

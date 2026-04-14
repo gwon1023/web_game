@@ -27,6 +27,10 @@ export const gameConfig = {
     expireAfterMs: 240,
     endDelayMs: 1400,
   },
+  judgment: {
+    perfectWindowMs: 60,
+    goodWindowMs: 120,
+  },
   playfield: {
     spawnX: 1140,
     judgeLineX: 260,

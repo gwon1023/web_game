@@ -2,8 +2,8 @@ import Phaser from 'phaser';
 import { sampleChart } from '../data/charts/sampleChart';
 import { gameConfig } from '../data/gameConfig';
 import { ChartPlaybackSystem } from '../systems/ChartPlaybackSystem';
-import type { InputAction } from '../types/GameTypes';
-import type { ActiveChartNote, NoteType } from '../types/GameTypes';
+import { JudgmentSystem } from '../systems/JudgmentSystem';
+import type { ActiveChartNote, InputAction, JudgmentResult, NoteType } from '../types/GameTypes';
 
 interface NoteView {
   readonly body: Phaser.GameObjects.Rectangle;
@@ -16,6 +16,7 @@ export class PlayScene extends Phaser.Scene {
   private actionText!: Phaser.GameObjects.Text;
   private songTimeText!: Phaser.GameObjects.Text;
   private readonly chartPlayback = new ChartPlaybackSystem(sampleChart);
+  private readonly judgmentSystem = new JudgmentSystem();
   private readonly noteViews = new Map<string, NoteView>();
 
   constructor() {
@@ -32,6 +33,16 @@ export class PlayScene extends Phaser.Scene {
 
   update(_time: number, _delta: number): void {
     const songTimeMs = this.chartPlayback.getSongTime(this.time.now);
+    const lateMisses = this.chartPlayback.collectLateMisses(
+      songTimeMs,
+      gameConfig.judgment.goodWindowMs,
+    );
+
+    lateMisses.forEach((miss) => {
+      this.destroyNoteView(miss.note?.id);
+      this.showJudgmentText(miss);
+    });
+
     const activeNotes = this.chartPlayback.update(songTimeMs);
     this.syncNoteViews(activeNotes);
     this.songTimeText.setText(`${sampleChart.title}  ${Math.floor(songTimeMs / 1000)}s`);
@@ -63,7 +74,7 @@ export class PlayScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(640, 166, 'Notes move toward the judge line. Scoring and judgments come later.', {
+      .text(640, 166, 'Hit J, K, or Space as matching notes reach the judge line.', {
         fontSize: '20px',
         color: '#9ca3af',
       })
@@ -153,6 +164,11 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private registerInput(): void {
+    this.input.keyboard?.removeAllListeners('keydown-J');
+    this.input.keyboard?.removeAllListeners('keydown-K');
+    this.input.keyboard?.removeAllListeners('keydown-SPACE');
+    this.input.keyboard?.removeAllListeners('keydown-ESC');
+
     this.input.keyboard?.on('keydown-J', () => this.handleAction('lightAttack'));
     this.input.keyboard?.on('keydown-K', () => this.handleAction('heavyAttack'));
     this.input.keyboard?.on('keydown-SPACE', () => this.handleAction('finisher'));
@@ -165,7 +181,77 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private handleAction(action: InputAction): void {
+    const songTimeMs = this.chartPlayback.getSongTime(this.time.now);
+    const judgment = this.judgmentSystem.judge(
+      this.chartPlayback.getJudgeableNotes(),
+      this.getNoteTypeForAction(action),
+      songTimeMs,
+    );
+
+    if (judgment.note) {
+      this.chartPlayback.markJudged(judgment.note.id);
+      this.destroyNoteView(judgment.note.id);
+    }
+
     this.actionText.setText(`${gameConfig.controls[action].label} pressed`);
+    this.showJudgmentText(judgment);
+  }
+
+  private showJudgmentText(result: JudgmentResult): void {
+    const colorByJudgment = {
+      Perfect: '#facc15',
+      Good: '#7dd3fc',
+      Miss: '#f87171',
+    };
+    const offsetText =
+      result.judgment === 'Miss' || !result.note
+        ? ''
+        : ` ${result.offsetMs > 0 ? '+' : ''}${result.offsetMs}ms`;
+    const noteLabel = result.note ? ` ${gameConfig.notes[result.note.type].label}` : '';
+    const y = result.note ? this.getLaneY(result.note.type) - 48 : 210;
+    const text = this.add
+      .text(gameConfig.playfield.judgeLineX, y, `${result.judgment}${noteLabel}${offsetText}`, {
+        fontSize: '28px',
+        color: colorByJudgment[result.judgment],
+        fontStyle: '900',
+      })
+      .setOrigin(0.5);
+
+    this.tweens.add({
+      targets: text,
+      y: y - 42,
+      alpha: 0,
+      duration: 520,
+      ease: 'Quad.Out',
+      onComplete: () => text.destroy(),
+    });
+  }
+
+  private destroyNoteView(noteId: string | undefined): void {
+    if (!noteId) {
+      return;
+    }
+
+    const view = this.noteViews.get(noteId);
+    if (!view) {
+      return;
+    }
+
+    view.body.destroy();
+    view.label.destroy();
+    this.noteViews.delete(noteId);
+  }
+
+  private getNoteTypeForAction(action: InputAction): NoteType {
+    if (action === 'lightAttack') {
+      return 'light';
+    }
+
+    if (action === 'heavyAttack') {
+      return 'heavy';
+    }
+
+    return 'finisher';
   }
 
   private getLaneY(type: NoteType): number {

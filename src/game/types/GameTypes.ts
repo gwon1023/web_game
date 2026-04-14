@@ -4,7 +4,9 @@ export type InputAction = 'lightAttack' | 'heavyAttack' | 'finisher';
 
 export type NoteType = 'light' | 'heavy' | 'finisher';
 
-export type NoteLifecycleState = 'pending' | 'active' | 'expired';
+export type JudgmentName = 'Perfect' | 'Good' | 'Miss';
+
+export type NoteLifecycleState = 'pending' | 'active' | 'judged' | 'missed';
 
 export interface ChartNote {
   readonly id: string;
@@ -24,6 +26,12 @@ export interface ActiveChartNote {
   readonly note: ChartNote;
   readonly progress: number;
   readonly state: NoteLifecycleState;
+}
+
+export interface JudgmentResult {
+  readonly judgment: JudgmentName;
+  readonly offsetMs: number;
+  readonly note?: ChartNote;
 }
 
 export interface ResultSceneData {
