@@ -31,6 +31,26 @@ export const gameConfig = {
     perfectWindowMs: 60,
     goodWindowMs: 120,
   },
+  scoring: {
+    judgmentScore: {
+      Perfect: 100,
+      Good: 60,
+      Miss: 0,
+    },
+    comboMultiplier: {
+      milestoneSize: 10,
+      bonusPerMilestone: 0.05,
+      maxBonus: 0.5,
+    },
+    fever: {
+      gaugeMax: 100,
+      perfectGain: 8,
+      goodGain: 4,
+      missPenalty: 15,
+      durationMs: 8000,
+      multiplierBonus: 0.5,
+    },
+  },
   playfield: {
     spawnX: 1140,
     judgeLineX: 260,

@@ -26,7 +26,15 @@ export class ResultScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(640, 392, 'Space - Restart     Esc - Back to Title', {
+      .text(640, 326, `Score ${data.score ?? 0}     Max Combo ${data.maxCombo ?? 0}`, {
+        fontSize: '34px',
+        color: gameConfig.colors.accent,
+        fontStyle: '900',
+      })
+      .setOrigin(0.5);
+
+    this.add
+      .text(640, 430, 'Space - Restart     Esc - Back to Title', {
         fontSize: '30px',
         color: gameConfig.colors.accent,
         fontStyle: '800',
@@ -34,7 +42,7 @@ export class ResultScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(640, 506, 'Placeholder result UI. Scores and grading will be added later.', {
+      .text(640, 526, 'Chase a cleaner run and a higher fever chain.', {
         fontSize: '20px',
         color: '#9ca3af',
       })

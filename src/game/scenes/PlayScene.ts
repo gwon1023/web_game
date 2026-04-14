@@ -3,7 +3,9 @@ import { sampleChart } from '../data/charts/sampleChart';
 import { gameConfig } from '../data/gameConfig';
 import { ChartPlaybackSystem } from '../systems/ChartPlaybackSystem';
 import { JudgmentSystem } from '../systems/JudgmentSystem';
+import { ScoreSystem } from '../systems/ScoreSystem';
 import type { ActiveChartNote, InputAction, JudgmentResult, NoteType } from '../types/GameTypes';
+import { GameplayHud } from '../ui/GameplayHud';
 
 interface NoteView {
   readonly body: Phaser.GameObjects.Rectangle;
@@ -15,8 +17,11 @@ const laneOrder: readonly NoteType[] = ['light', 'heavy', 'finisher'];
 export class PlayScene extends Phaser.Scene {
   private actionText!: Phaser.GameObjects.Text;
   private songTimeText!: Phaser.GameObjects.Text;
+  private feverOverlay!: Phaser.GameObjects.Rectangle;
+  private hud!: GameplayHud;
   private readonly chartPlayback = new ChartPlaybackSystem(sampleChart);
   private readonly judgmentSystem = new JudgmentSystem();
+  private readonly scoreSystem = new ScoreSystem();
   private readonly noteViews = new Map<string, NoteView>();
 
   constructor() {
@@ -27,12 +32,17 @@ export class PlayScene extends Phaser.Scene {
     this.noteViews.clear();
     this.cameras.main.setBackgroundColor(gameConfig.colors.background);
     this.drawPlaceholderUi();
+    this.scoreSystem.reset();
+    this.hud = new GameplayHud(this);
+    this.hud.update(this.scoreSystem.getSnapshot());
     this.chartPlayback.start(this.time.now);
     this.registerInput();
   }
 
-  update(_time: number, _delta: number): void {
+  update(_time: number, delta: number): void {
     const songTimeMs = this.chartPlayback.getSongTime(this.time.now);
+    this.scoreSystem.update(delta);
+
     const lateMisses = this.chartPlayback.collectLateMisses(
       songTimeMs,
       gameConfig.judgment.goodWindowMs,
@@ -40,23 +50,26 @@ export class PlayScene extends Phaser.Scene {
 
     lateMisses.forEach((miss) => {
       this.destroyNoteView(miss.note?.id);
-      this.showJudgmentText(miss);
+      this.applyJudgmentResult(miss);
     });
 
     const activeNotes = this.chartPlayback.update(songTimeMs);
     this.syncNoteViews(activeNotes);
     this.songTimeText.setText(`${sampleChart.title}  ${Math.floor(songTimeMs / 1000)}s`);
+    this.updateFeverIntensity();
+    this.hud.update(this.scoreSystem.getSnapshot());
 
     if (this.chartPlayback.isComplete(songTimeMs)) {
-      this.scene.start(gameConfig.sceneKeys.result, {
-        message: 'Chart playback complete',
-      });
+      this.startResult('Chart playback complete');
     }
   }
 
   private drawPlaceholderUi(): void {
     this.add.rectangle(640, 360, 1280, 720, 0x08090d);
     this.add.rectangle(640, 360, 1120, 470, gameConfig.colors.panel, 0.68);
+    this.feverOverlay = this.add
+      .rectangle(640, 360, 1280, 720, 0xf97316, 0)
+      .setBlendMode(Phaser.BlendModes.ADD);
 
     this.add
       .text(640, 76, 'PLAY', {
@@ -174,9 +187,7 @@ export class PlayScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-SPACE', () => this.handleAction('finisher'));
 
     this.input.keyboard?.once('keydown-ESC', () => {
-      this.scene.start(gameConfig.sceneKeys.result, {
-        message: 'Chart playback skipped',
-      });
+      this.startResult('Chart playback skipped');
     });
   }
 
@@ -194,7 +205,13 @@ export class PlayScene extends Phaser.Scene {
     }
 
     this.actionText.setText(`${gameConfig.controls[action].label} pressed`);
-    this.showJudgmentText(judgment);
+    this.applyJudgmentResult(judgment);
+  }
+
+  private applyJudgmentResult(result: JudgmentResult): void {
+    this.scoreSystem.applyJudgment(result.judgment);
+    this.showJudgmentText(result);
+    this.hud.update(this.scoreSystem.getSnapshot());
   }
 
   private showJudgmentText(result: JudgmentResult): void {
@@ -240,6 +257,22 @@ export class PlayScene extends Phaser.Scene {
     view.body.destroy();
     view.label.destroy();
     this.noteViews.delete(noteId);
+  }
+
+  private updateFeverIntensity(): void {
+    const snapshot = this.scoreSystem.getSnapshot();
+    const pulse = 0.04 * Math.sin(this.time.now / 90);
+    this.feverOverlay.setAlpha(snapshot.feverActive ? 0.12 + pulse : 0);
+  }
+
+  private startResult(message: string): void {
+    const snapshot = this.scoreSystem.getSnapshot();
+
+    this.scene.start(gameConfig.sceneKeys.result, {
+      message,
+      score: snapshot.score,
+      maxCombo: snapshot.maxCombo,
+    });
   }
 
   private getNoteTypeForAction(action: InputAction): NoteType {

@@ -34,6 +34,19 @@ export interface JudgmentResult {
   readonly note?: ChartNote;
 }
 
+export interface ScoreSnapshot {
+  readonly score: number;
+  readonly combo: number;
+  readonly maxCombo: number;
+  readonly multiplier: number;
+  readonly feverGauge: number;
+  readonly feverActive: boolean;
+  readonly feverRemainingMs: number;
+  readonly lastScoreAdded: number;
+}
+
 export interface ResultSceneData {
   readonly message: string;
+  readonly score?: number;
+  readonly maxCombo?: number;
 }
