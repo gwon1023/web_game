@@ -1,4 +1,4 @@
-import type { InputAction, SceneKey } from '../types/GameTypes';
+import type { InputAction, NoteType, SceneKey } from '../types/GameTypes';
 
 export const gameConfig = {
   width: 1280,
@@ -22,9 +22,38 @@ export const gameConfig = {
       label: 'Space - Finisher',
     },
   } satisfies Record<InputAction, { key: string; label: string }>,
-  scenes: {
-    playDurationMs: 8000,
+  chart: {
+    approachTimeMs: 1800,
+    expireAfterMs: 240,
+    endDelayMs: 1400,
   },
+  playfield: {
+    spawnX: 1140,
+    judgeLineX: 260,
+    laneStartY: 260,
+    laneGap: 100,
+    noteWidth: 76,
+    noteHeight: 48,
+    finisherWidth: 112,
+    laneWidth: 1020,
+  },
+  notes: {
+    light: {
+      label: 'J',
+      laneName: 'Light',
+      color: 0x34d399,
+    },
+    heavy: {
+      label: 'K',
+      laneName: 'Heavy',
+      color: 0xf97316,
+    },
+    finisher: {
+      label: 'SPACE',
+      laneName: 'Finisher',
+      color: 0xef4444,
+    },
+  } satisfies Record<NoteType, { label: string; laneName: string; color: number }>,
   colors: {
     background: '#08090d',
     panel: 0x11131c,
