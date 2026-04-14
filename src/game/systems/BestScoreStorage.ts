@@ -2,15 +2,24 @@ import { gameConfig } from '../data/gameConfig';
 
 export class BestScoreStorage {
   load(): number {
-    const rawValue = this.getStorage()?.getItem(gameConfig.persistence.bestScoreKey);
-    const parsedValue = Number(rawValue);
+    try {
+      const rawValue = this.getStorage()?.getItem(gameConfig.persistence.bestScoreKey);
+      const parsedValue = Number(rawValue);
 
-    return Number.isFinite(parsedValue) ? parsedValue : 0;
+      return Number.isFinite(parsedValue) ? parsedValue : 0;
+    } catch {
+      return 0;
+    }
   }
 
   save(score: number): number {
     const bestScore = Math.max(this.load(), score);
-    this.getStorage()?.setItem(gameConfig.persistence.bestScoreKey, String(bestScore));
+
+    try {
+      this.getStorage()?.setItem(gameConfig.persistence.bestScoreKey, String(bestScore));
+    } catch {
+      return bestScore;
+    }
 
     return bestScore;
   }
