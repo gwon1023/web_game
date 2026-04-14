@@ -20,3 +20,7 @@ npm run dev
 ```bash
 npm run build
 ```
+
+## Deploy
+
+This project includes a GitHub Pages workflow. Pushes to `main` build the Vite app and publish `dist`.
