@@ -11,6 +11,29 @@ body,
     sans-serif;
 }
 
+#app {
+  display: grid;
+  place-items: center;
+}
+
+#boot-fallback {
+  color: #f5f7fb;
+  text-align: center;
+}
+
+#boot-fallback h1 {
+  margin: 0 0 16px;
+  font-size: 56px;
+  font-weight: 900;
+}
+
+#boot-fallback p {
+  margin: 0;
+  color: #facc15;
+  font-size: 22px;
+  font-weight: 700;
+}
+
 canvas {
   display: block;
 }

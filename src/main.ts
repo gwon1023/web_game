@@ -6,18 +6,20 @@ import { ResultScene } from './game/scenes/ResultScene';
 import { TitleScene } from './game/scenes/TitleScene';
 
 const config: Phaser.Types.Core.GameConfig = {
-  type: Phaser.AUTO,
+  type: Phaser.CANVAS,
   parent: 'app',
   width: gameConfig.width,
   height: gameConfig.height,
   backgroundColor: gameConfig.colors.background,
-  physics: {
-    default: 'arcade',
-  },
   scene: [TitleScene, PlayScene, ResultScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+  callbacks: {
+    postBoot: () => {
+      document.getElementById('boot-fallback')?.remove();
+    },
   },
 };
 
