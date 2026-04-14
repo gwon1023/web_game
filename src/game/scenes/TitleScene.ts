@@ -1,7 +1,10 @@
 import Phaser from 'phaser';
 import { gameConfig } from '../data/gameConfig';
+import { BestScoreStorage } from '../systems/BestScoreStorage';
 
 export class TitleScene extends Phaser.Scene {
+  private readonly bestScoreStorage = new BestScoreStorage();
+
   constructor() {
     super(gameConfig.sceneKeys.title);
   }
@@ -44,7 +47,15 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(640, 370, 'Press Space to start', {
+      .text(640, 370, `Best Score ${this.bestScoreStorage.load()}`, {
+        fontSize: '28px',
+        color: gameConfig.colors.accent,
+        fontStyle: '900',
+      })
+      .setOrigin(0.5);
+
+    this.add
+      .text(640, 430, 'Press Space to start', {
         fontSize: '34px',
         color: gameConfig.colors.accent,
         fontStyle: '800',
@@ -52,7 +63,7 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(640, 542, 'Placeholder title UI. Gameplay systems will be added later.', {
+      .text(640, 542, 'Hit notes on rhythm. Land a finisher for the S rank.', {
         fontSize: '20px',
         color: '#9ca3af',
       })

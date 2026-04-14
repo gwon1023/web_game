@@ -50,6 +50,15 @@ export const gameConfig = {
       durationMs: 8000,
       multiplierBonus: 0.5,
     },
+    rank: {
+      sAccuracy: 95,
+      aAccuracy: 88,
+      bAccuracy: 75,
+      cAccuracy: 60,
+    },
+  },
+  persistence: {
+    bestScoreKey: 'beat-breaker-best-score',
   },
   playfield: {
     spawnX: 1140,

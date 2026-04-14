@@ -209,7 +209,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private applyJudgmentResult(result: JudgmentResult): void {
-    this.scoreSystem.applyJudgment(result.judgment);
+    this.scoreSystem.applyJudgment(result);
     this.showJudgmentText(result);
     this.hud.update(this.scoreSystem.getSnapshot());
   }
@@ -272,6 +272,9 @@ export class PlayScene extends Phaser.Scene {
       message,
       score: snapshot.score,
       maxCombo: snapshot.maxCombo,
+      accuracy: snapshot.accuracy,
+      rank: snapshot.rank,
+      finisherSuccess: snapshot.finisherSuccess,
     });
   }
 
